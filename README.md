@@ -81,7 +81,8 @@ return [
 ## 📖 Usage
 ### 🚀 Initiating a Payment Intent
 
-Leverage the `EdfaPay` Facade and its fluent chain builders to spin up an absolute transaction payload:
+Leverage the EdfaPay Facade and its fluent chain builders to spin up an absolute transaction payload. 
+Per the EdfaPay Webhook Docs, you can set your notification capture endpoint dynamically per-transaction using setNotificationUrl() or rely on your global merchant dashboard webhook configurations.
 
 ```php
 use DarshPhpDev\EdfaPay\Facades\EdfaPay;
@@ -91,6 +92,7 @@ $response = EdfaPay::initSale()
     ->setAmount(250.50) // Float or numeric strings are safely converted to precise decimals
     ->setCurrency('SAR')
     ->setUrls('https://yourdomain.com/payment/success', 'https://yourdomain.com/payment/failure')
+    ->setNotificationUrl('https://yourdomain.com/api/v1/payments/edfapay/webhook') // Dynamic dynamic webhook link option
     ->setCustomerDetails([
         'name'  => 'Mustafa Ahmed',
         'email' => 'customer@domain.com',
@@ -106,6 +108,19 @@ $response = EdfaPay::initSale()
 // Extract the gateway checkout URL from the response array
 if (isset($response['redirectUrl'])) {
     return redirect()->away($response['redirectUrl']);
+}
+```
+
+Sample edfaapay successful response:
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "errorCode": null,
+  "data": {
+    "redirectUrl": "https://edfa-demo.edfapay.com/pay/checkout?sessionId=fa522cc3-7b92-467b-b132-40794bf4734f",
+    "id": "fa522cc3-7b92-467b-b132-40794bf4734f"
+  }
 }
 ```
 

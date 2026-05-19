@@ -88,6 +88,19 @@ class EdfaPayPaymentBuilder
     }
 
     /**
+     * Set a dynamic transaction webhook notification URL.
+     * Or set via merchant dashboard webhook configuration.
+     *
+     * @param string $url
+     * @return $this
+     */
+    public function setNotificationUrl(string $url): self
+    {
+        $this->data['notification_url'] = $url;
+        return $this;
+    }
+
+    /**
      * Build the payload and dispatch it through the client engine.
      */
     public function initiate(): array
