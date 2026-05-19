@@ -22,7 +22,7 @@ For full API insights, please review the official [EdfaPay API Documentation Gui
 ## 📋 Requirements
 
 - 🐘 PHP 8.0 | 8.1 | 8.2 | 8.3
-- ⚡ Laravel 8.0 | 9.0 | 10.0 | 11.0
+- ⚡ Laravel 8.0 | 9.0 | 10.0 | 11.0 | 12.0 | 13.0
 
 ## 📥 Installation
 
