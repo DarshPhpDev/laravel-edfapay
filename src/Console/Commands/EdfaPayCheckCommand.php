@@ -73,6 +73,18 @@ class EdfaPayCheckCommand extends Command
             'EDFAPAY_CURRENCY' => 'SAR',
         ];
 
+        $hasAnyMissing = false;
+        foreach ($defaults as $key => $default) {
+            if (!$this->envKeyExists($key)) {
+                $hasAnyMissing = true;
+                break;
+            }
+        }
+
+        if ($hasAnyMissing) {
+            $this->appendToEnv(PHP_EOL . '# EdfaPay Configurations');
+        }
+
         foreach ($defaults as $key => $default) {
             if (!$this->envKeyExists($key)) {
                 $this->writeEnvValue($key, $default);
@@ -81,6 +93,22 @@ class EdfaPayCheckCommand extends Command
                 }
             }
         }
+    }
+
+    /**
+     * Append a raw line to the .env file.
+     */
+    protected function appendToEnv(string $line): void
+    {
+        $path = base_path('.env');
+        $env  = file_get_contents($path);
+
+        if ($env === false) {
+            $this->error('.env file not found.');
+            return;
+        }
+
+        file_put_contents($path, rtrim($env) . PHP_EOL . $line . PHP_EOL);
     }
 
     /**
