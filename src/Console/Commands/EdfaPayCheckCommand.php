@@ -16,8 +16,23 @@ class EdfaPayCheckCommand extends Command
 
         // 1. Check API key
         if (empty($config['api_key'])) {
-            $this->error('EDFAPAY_API_KEY is not set.');
-            return;
+            $this->warn('EDFAPAY_API_KEY is not set.');
+
+            $choice = $this->choice('How would you like to proceed?', [
+                'Enter my API key',
+                'Use sandbox key for testing',
+                'Abort',
+            ], 2);
+
+            if ($choice === 'Enter my API key') {
+                $config['api_key'] = $this->ask('Enter your EdfaPay API key');
+            } elseif ($choice === 'Use sandbox key for testing') {
+                $config['api_key'] = 'BF15E34275189913593F283D691E39C5849B514E41C8E7D6ACA8BB99319C08C2';
+                $this->warn('Using sandbox API key. Do not use this in production.');
+            } else {
+                $this->info('Aborted.');
+                return;
+            }
         }
 
         $this->info('API Key: ✓');
