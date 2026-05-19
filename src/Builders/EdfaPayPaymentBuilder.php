@@ -3,6 +3,7 @@
 namespace DarshPhpDev\EdfaPay\Builders;
 
 use DarshPhpDev\EdfaPay\Services\EdfaPayClient;
+use DarshPhpDev\EdfaPay\Exceptions\EdfaPayValidationException;
 
 class EdfaPayPaymentBuilder
 {
@@ -105,6 +106,30 @@ class EdfaPayPaymentBuilder
      */
     public function initiate(): array
     {
+        $this->validate();
         return $this->client->sendInitiateRequest($this->data);
+    }
+
+    /**
+     * Validate required fields before dispatching the request.
+     *
+     * @throws EdfaPayValidationException
+     */
+    protected function validate(): void
+    {
+        $errors = [];
+
+        if (empty($this->data['orderId']))                          $errors[] = 'orderId is required';
+        if (empty($this->data['currency']))                         $errors[] = 'currency is required';
+        if (empty($this->data['amount']))                           $errors[] = 'amount is required';
+        if (empty($this->data['customerDetails']['name']))          $errors[] = 'customerDetails.name is required';
+        if (empty($this->data['customerDetails']['email']))         $errors[] = 'customerDetails.email is required';
+        if (empty($this->data['customerDetails']['phone']))         $errors[] = 'customerDetails.phone is required';
+        if (empty($this->data['successUrl']))                       $errors[] = 'successUrl is required';
+        if (empty($this->data['failureUrl']))                       $errors[] = 'failureUrl is required';
+
+        if (!empty($errors)) {
+            throw new EdfaPayValidationException($errors);
+        }
     }
 }

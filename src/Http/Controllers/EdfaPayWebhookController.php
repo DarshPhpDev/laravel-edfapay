@@ -17,42 +17,39 @@ class EdfaPayWebhookController extends Controller
      */
     public function handle(Request $request)
     {
-        // 1. Extract payload safely using standard format or raw stream direct binary fallback
         $payload = $request->all();
 
         if (empty($payload)) {
             $payload = json_decode($request->getContent(), true) ?? [];
         }
 
-        $orderId = $payload['orderId'] ?? 'UNKNOWN';
-        $status = $payload['status'] ?? 'UNKNOWN';
-        $transactionId = $payload['transactionId'] ?? 'UNKNOWN';
-
-        // 2. Production Debug Tracking Logs
-        Log::info('EDFAPAY-PACKAGE-WEBHOOK: Received callback request notification.', [
-            'order_id'       => $orderId,
-            'status'         => $status,
-            'transaction_id' => $transactionId,
-            'payload_size'   => count($payload),
-        ]);
-
         if (empty($payload) || !isset($payload['orderId'])) {
-            Log::warning('EDFAPAY-PACKAGE-WEBHOOK: Aborting processing. Malformed or empty payload context received.', [
-                'raw_content' => $request->getContent()
+            Log::warning('EDFAPAY-WEBHOOK: Malformed or empty payload received.', [
+                'raw_content' => $request->getContent(),
             ]);
-            
-            // Still respond with 200 or 400 depending on gateway requirement. 
-            // Returning 200 ensures the gateway stops retrying broken dead streams.
             return response()->json(['status' => 'error', 'message' => 'Malformed data structure.'], 200);
         }
 
-        // 3. Dispatch the event asynchronously across the Laravel core system kernel
-        event(new EdfaPayWebhookReceived($payload));
+        $orderId       = $payload['orderId'];
+        $status        = $payload['status'] ?? 'UNKNOWN';
+        $transactionId = $payload['transactionId'] ?? 'UNKNOWN';
 
-        // 4. Return clean, definitive 200 response back to EdfaPay servers
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Webhook received and processed successfully.'
-        ], 200);
+        Log::info('EDFAPAY-WEBHOOK: Payload received.', [
+            'order_id'       => $orderId,
+            'status'         => $status,
+            'transaction_id' => $transactionId,
+        ]);
+
+        try {
+            event(new EdfaPayWebhookReceived($payload));
+        } catch (\Throwable $e) {
+            Log::error('EDFAPAY-WEBHOOK: Event listener threw an exception.', [
+                'order_id' => $orderId,
+                'error'    => $e->getMessage(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Webhook processing failed.'], 200);
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Webhook received and processed successfully.'], 200);
     }
 }

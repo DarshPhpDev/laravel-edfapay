@@ -4,6 +4,7 @@ namespace DarshPhpDev\EdfaPay;
 
 use Illuminate\Support\ServiceProvider;
 use DarshPhpDev\EdfaPay\Services\EdfaPayClient;
+use DarshPhpDev\EdfaPay\Console\Commands\EdfaPayCheckCommand;
 
 class EdfaPayServiceProvider extends ServiceProvider
 {
@@ -12,14 +13,14 @@ class EdfaPayServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 1. Publish configuration file mapping
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../config/edfapay.php' => config_path('edfapay.php'),
             ], 'edfapay-config');
+
+            $this->commands([EdfaPayCheckCommand::class]);
         }
 
-        // 2. Load dynamic package route for the webhook if enabled
         $this->registerWebhookRoute();
     }
 
@@ -28,11 +29,13 @@ class EdfaPayServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Automatically merge fallback configurations
         $this->mergeConfigFrom(__DIR__ . '/../config/edfapay.php', 'edfapay');
 
-        // Bind core service instance as an IoC Singleton block
         $this->app->singleton('edfapay', function ($app) {
+            if (empty($app['config']['edfapay.api_key'])) {
+                throw new \RuntimeException('EdfaPay API key is not configured. Set EDFAPAY_API_KEY in your .env file.');
+            }
+
             return new EdfaPayClient($app['config']['edfapay']);
         });
     }

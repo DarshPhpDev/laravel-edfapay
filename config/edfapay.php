@@ -10,7 +10,7 @@ return [
     /**
      * EdfaPay API Credentials
      */
-    'api_key' => env('EDFAPAY_API_KEY', 'BF15E34275189913593F283D691E39C5849B514E41C8E7D6ACA8BB99319C08C2'),
+    'api_key' => env('EDFAPAY_API_KEY'),
 
     /**
      * API Environment Base Url Endpoints

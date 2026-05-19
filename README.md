@@ -21,7 +21,7 @@ For full API insights, please review the official [EdfaPay API Documentation Gui
 
 ## 📋 Requirements
 
-- 🐘 PHP 8.0 | 8.1 | 8.2 | 8.3
+- 🐘 PHP 7.4 | 8.0 | 8.1 | 8.2 | 8.3
 - ⚡ Laravel 8.0 | 9.0 | 10.0 | 11.0 | 12.0 | 13.0
 
 ## 📥 Installation
@@ -44,7 +44,7 @@ Add your operational keys to your application's environment file (`.env`):
 
 ```
 EDFAPAY_MODE=demo
-EDFAPAY_API_KEY=BF15E34275189913593F283D691E39C5849B514E41C8E7D6ACA8BB99319C08C2
+EDFAPAY_API_KEY=your-api-key-here
 EDFAPAY_CURRENCY=SAR
 ```
 
@@ -77,6 +77,26 @@ return [
     ],
 ];
 ```
+
+## 🩺 Verifying Your Setup
+
+After configuration, run the following command to validate your credentials and confirm API connectivity:
+
+```bash
+php artisan edfapay:check
+```
+
+A successful output looks like:
+
+```
+API Key: ✓
+Mode: demo
+Currency: SAR
+Testing API connectivity...
+API connectivity: ✓
+```
+
+If `EDFAPAY_API_KEY` is missing, the package will throw a `RuntimeException` on first use to prevent silent failures in production.
 
 ## 📖 Usage
 ### 🚀 Initiating a Payment Intent
@@ -111,6 +131,33 @@ if (isset($response['redirectUrl'])) {
 }
 ```
 
+### ⚠️ Validation & Error Handling
+
+Calling `initiate()` automatically validates the payload before dispatching the request. The following fields are required: `orderId`, `currency`, `amount`, `customerDetails.name`, `customerDetails.email`, `customerDetails.phone`, `successUrl`, and `failureUrl`.
+
+Use the package's typed exceptions to handle failures cleanly:
+
+```php
+use DarshPhpDev\EdfaPay\Facades\EdfaPay;
+use DarshPhpDev\EdfaPay\Exceptions\EdfaPayValidationException;
+use DarshPhpDev\EdfaPay\Exceptions\EdfaPayApiException;
+
+try {
+    $response = EdfaPay::initSale()
+        ->setOrderId('INV-2026-00941')
+        ->setAmount(250.50)
+        ->setUrls('https://yourdomain.com/payment/success', 'https://yourdomain.com/payment/failure')
+        ->setCustomerDetails(['name' => 'Mustafa Ahmed', 'email' => 'customer@domain.com', 'phone' => '+966500000001'])
+        ->initiate();
+} catch (EdfaPayValidationException $e) {
+    // Missing or invalid required fields — no HTTP call was made
+    dd($e->getErrors()); // ['customerDetails.phone is required', ...]
+} catch (EdfaPayApiException $e) {
+    // HTTP request was made but EdfaPay returned an error
+    dd($e->getCode(), $e->getResponseBody());
+}
+```
+
 Sample edfaapay successful response:
 ```json
 {
@@ -121,6 +168,43 @@ Sample edfaapay successful response:
     "redirectUrl": "https://edfa-demo.edfapay.com/pay/checkout?sessionId=fa522cc3-7b92-467b-b132-40794bf4734f",
     "id": "fa522cc3-7b92-467b-b132-40794bf4734f"
   }
+}
+```
+
+## 🔍 Querying a Transaction Status
+
+Use `queryTransaction()` to fetch the current status of any transaction by its ID. Useful for reconciliation jobs or when a webhook is missed.
+
+```php
+use DarshPhpDev\EdfaPay\Facades\EdfaPay;
+use DarshPhpDev\EdfaPay\Exceptions\EdfaPayApiException;
+
+try {
+    $response = EdfaPay::queryTransaction('fa522cc3-7b92-467b-b132-40794bf4734f');
+} catch (EdfaPayApiException $e) {
+    dd($e->getCode(), $e->getResponseBody());
+}
+```
+
+## 💸 Initiating a Refund
+
+Use the `initRefund()` fluent builder to refund a previously approved transaction. `transactionId` and `amount` are required. `reason` is optional.
+
+```php
+use DarshPhpDev\EdfaPay\Facades\EdfaPay;
+use DarshPhpDev\EdfaPay\Exceptions\EdfaPayValidationException;
+use DarshPhpDev\EdfaPay\Exceptions\EdfaPayApiException;
+
+try {
+    $response = EdfaPay::initRefund()
+        ->setTransactionId('fa522cc3-7b92-467b-b132-40794bf4734f')
+        ->setAmount(250.50)
+        ->setReason('Customer requested cancellation') // optional
+        ->refund();
+} catch (EdfaPayValidationException $e) {
+    dd($e->getErrors());
+} catch (EdfaPayApiException $e) {
+    dd($e->getCode(), $e->getResponseBody());
 }
 ```
 
