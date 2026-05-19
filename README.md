@@ -1,5 +1,3 @@
-<p align="center"><img src="/art/socialcard.png" alt="Laravel EdfaPay"></p>
-
 # Laravel EdfaPay
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/darshphpdev/laravel-edfapay?style=flat-square)](https://packagist.org/packages/darshphpdev/laravel-edfapay)
